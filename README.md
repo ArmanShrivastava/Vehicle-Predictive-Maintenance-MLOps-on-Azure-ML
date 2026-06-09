@@ -2,7 +2,7 @@
 Predictive Maintenance MLOps Platform that can ingest telemetry from millions of vehicles, train AI models on NVIDIA GPUs, serve predictions in real-time, monitor drift, and automatically retrain itself.
 What Business Problem Does It Solve?
 
-Volkswagen wants to predict:
+ We wants to predict:
 
 Engine failures
 Battery failures
