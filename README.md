@@ -36,7 +36,7 @@ Failure avoided
 
 The flow 
 
-Volkswagen Vehicles
+Vehicles
         │
         ▼
 Azure IoT Hub
