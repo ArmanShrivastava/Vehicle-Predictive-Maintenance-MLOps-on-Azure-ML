@@ -82,3 +82,8 @@ Drift Detection
         │
         ▼
 Auto Retraining
+
+
+This project is an end-to-end enterprise MLOps platform for Volkswagen predictive maintenance that ingests vehicle telemetry through Kafka and Spark, trains distributed PyTorch models on NVIDIA A100 GPUs, manages experiments with MLflow, optimizes inference using TensorRT and Triton, serves models via KServe on Kubernetes, and continuously monitors model health and drift using Evidently, Prometheus, Grafana, Loki, Jaeger, and OpenTelemetry, enabling a fully automated retraining lifecycle.
+
+
