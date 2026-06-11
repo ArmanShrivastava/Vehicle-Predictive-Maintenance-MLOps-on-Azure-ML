@@ -1,0 +1,16 @@
+.terraform/
+*.tfstate
+*.tfvars.json
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+models/*.pt
+models/*.bin
+models/*.plan
+models/*.pkl
+data/raw/
+data/validated/
+data/features/
+reports/
+/dvc/cache

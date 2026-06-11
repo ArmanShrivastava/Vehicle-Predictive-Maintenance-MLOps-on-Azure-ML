@@ -1,0 +1,50 @@
+#Multi-Instance GPU (MIG) is a feature available on NVIDIA A100 and certain other data center GPUs that allows a single physical GPU to be divided into multiple hardware-isolated GPU instances.
+#Each MIG instance receives its own:
+
+# ---> GPU Memory (HBM)
+# ---> Streaming Multiprocessors (SMs / Compute Resources)
+# ---> L2 Cache
+# ---> Memory Bandwidth
+# ---> Copy Engines
+
+# This hardware-level isolation ensures one workload cannot consume resources allocated to another workload.
+#so this file is for partitioning the GPU into multiple instances using MIG, which allows for better resource utilization and isolation of workloads on the same physical GPU.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mig-parted-config
+  namespace: gpu-operator
+data:
+  config.yaml: |
+    version: v1
+    mig-configs:
+      training-mode:
+        - device: [0]
+          mig-enabled: true
+          mig-devices:
+            "1g.10gb": 0 # 1 GPU instance with 1 GB of memory and 10 GB/s of bandwidth --- format is <GPU slices>g.<Memory Size>gb
+            "2g.20gb": 0 # 1 GPU instance with 2 GB of memory and 20 GB/s of bandwidth
+            "3g.40gb": 1 # 1 GPU instance with 3 GB of memory and 40 GB/s of bandwidth
+            "7g.80gb": 0
+
+      serving-mode:
+        - device: [0]
+          mig-enabled: true
+          mig-devices:
+            "1g.10gb": 7 # 7 GPU instances with 1 GB of memory and 10 GB/s of bandwidth each
+            "2g.20gb": 0
+            "3g.40gb": 0
+            "7g.80gb": 0
+
+      dev-mode:
+        - device: [0]
+          mig-enabled: true
+          mig-devices:
+            "1g.10gb": 2    # 2 small dev slices
+            "2g.20gb": 1    # 1 medium slice for testing
+            "3g.40gb": 1    # 1 large slice for training tests
+            "7g.80gb": 0
+            
+      
+

@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vw-mlops
+  labels:
+    tier: platform
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vw-training
+  labels:
+    tier: training
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata: 
+  name: vw-serving
+  labels:
+    tier: serving
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: vw-monitoring
+  labels:
+    tier: obersvability
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gpu-operator
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd

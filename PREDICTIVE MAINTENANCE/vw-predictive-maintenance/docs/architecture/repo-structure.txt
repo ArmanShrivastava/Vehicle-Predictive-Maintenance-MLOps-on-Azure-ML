@@ -1,0 +1,83 @@
+vw-predictive-maintenance/
+├── .gitignore                                      [P1]
+├── Makefile                                        [P1] (+ extended targets in [ARCH])
+├── dvc.yaml                                        [P3]
+├── params.yaml                                     [ARCH]
+├── requirements-dev.txt                            [NOW]
+├── requirements-training.txt                       [NOW]
+│
+├── scripts/
+│   ├── 00-bootstrap-state.sh                       [P1]
+│   ├── 01-bootstrap-cluster.sh                     [P1]
+│   ├── 02-install-argocd.sh                        [P2]
+│   ├── 03-install-kserve.sh                        [P5]
+│   └── tensorrt_convert.py                         [ARCH]
+│
+├── infrastructure/terraform/
+│   ├── versions.tf  providers.tf  variables.tf     [P1]
+│   ├── terraform.tfvars  main.tf  networking.tf    [P1]
+│   ├── cluster.tf  storage.tf  database.tf         [P1]
+│   ├── redis.tf  eventhubs.tf  acr.tf              [P1]
+│   ├── identity.tf  keyvault.tf  budget.tf         [P1]
+│   ├── outputs.tf                                  [P1]
+│   └── private-endpoints.tf                        [P6]
+│
+├── kubernetes/
+│   ├── base/
+│   │   ├── namespaces.yaml  resource-quotas.yaml   [P1]
+│   │   ├── gpu-operator-values.yaml                [P1] (dcgm serviceMonitor flipped in P2)
+│   │   ├── gpu-test-pod.yaml                       [P1]
+│   │   └── network-policies.yaml                   [P6]
+│   ├── argocd/
+│   │   ├── root-app.yaml                           [P2]
+│   │   └── apps/ (mlflow, airflow, observability)  [P2]
+│   ├── platform/
+│   │   ├── serviceaccounts.yaml                    [P2]
+│   │   ├── mlflow/deployment.yaml                  [P2]
+│   │   ├── airflow-values.yaml                     [P2]
+│   │   ├── kps-values.yaml (+ alertmanager route)  [P2]+[P6]
+│   │   ├── loki-values.yaml                        [P2]
+│   │   ├── triton-servicemonitor.yaml              [P5]
+│   │   └── drift-alert-rule.yaml (+ full rules)    [P6]+[ARCH §4.4]
+│   ├── otel/  (collector ConfigMap+Deploy, Jaeger) [ARCH §4.2, §4.6]
+│   ├── data/consumer-cronjob.yaml                  [P3]
+│   └── training/distributed-training-job.yaml      [ARCH §3.5] (optional multi-GPU)
+│
+├── docker/
+│   ├── Dockerfile.mlflow                           [P2]
+│   ├── Dockerfile.data                             [P3]
+│   ├── Dockerfile.training                         [ARCH]
+│   └── Dockerfile.serving                          [ARCH]
+│
+├── src/
+│   ├── ingestion/  producer.py, consumer_to_delta.py        [P3]
+│   ├── data/
+│   │   ├── generate_synthetic_data.py              [ARCH] (optional seed data)
+│   │   ├── export_training_set.py                  [P3]
+│   │   ├── validation/validate.py                  [NOW]
+│   │   └── preprocessing/feature_engineering.py    [ARCH]
+│   ├── training/  train.py, distributed_train.py   [ARCH]
+│   ├── serving/   upload_to_triton_repo.py         [P4]
+│   ├── monitoring/ drift_detector.py               [ARCH]
+│   │              run_drift_check.py               [NOW]
+│   └── utils/     telemetry.py, logging.py         [ARCH §4.3, §5]
+│
+├── feature_repo/  feature_store.yaml, features.py  [P3]
+│
+├── airflow/dags/
+│   ├── vw_training_dag.py                          [P4]
+│   └── vw_monitoring_dag.py                        [P6]
+│
+├── triton/model_repository/
+│   ├── vw_preprocessor/   config.pbtxt + 1/model.py   [ARCH §3.7]
+│   ├── vw_failure_detector/ config.pbtxt (+1/model.plan generated)  [ARCH §3.7]
+│   ├── vw_postprocessor/  1/model.py [ARCH] + config.pbtxt [NOW]
+│   └── vw_ensemble/       config.pbtxt                [ARCH §3.7]
+│
+├── kserve/inferenceservice.yaml                    [P5]
+├── monitoring/grafana/dashboards/  (2× JSON)       [ARCH §4.7]
+├── .github/workflows/ci-cd.yml                     [P6]
+├── tests/
+│   ├── unit/test_feature_engineering.py            [NOW]
+│   └── dags/test_dag_imports.py                    [NOW]
+└── docs/runbooks/  disaster-recovery.md, spot-eviction.md   [P6]
