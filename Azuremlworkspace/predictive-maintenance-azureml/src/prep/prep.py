@@ -1,62 +1,38 @@
-"""
-Data preparation script for predictive maintenance model
-"""
 import argparse
 import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from pathlib import Path
-import json
+from  pathlib import Path
+from sklearn.model_selection import train_test_split
 
-def prepare_data(input_path, output_path, test_size=0.2):
-    """
-    Prepare and preprocess vehicle maintenance data
-    
-    Args:
-        input_path: Path to raw data CSV
-        output_path: Path to save processed data
-        test_size: Proportion of data for testing
-    """
-    # Read data
-    df = pd.read_csv(input_path)
-    
-    # Remove duplicates
-    df = df.drop_duplicates()
-    
-    # Handle missing values
-    df = df.fillna(df.mean(numeric_only=True))
-    
-    # Feature engineering
-    df['high_temp'] = (df['engine_temp'] > 100).astype(int)
-    df['low_pressure'] = (df['oil_pressure'] < 45).astype(int)
-    df['low_battery'] = (df['battery_voltage'] < 11).astype(int)
-    
-    # Separate features and target
-    X = df.drop('maintenance_needed', axis=1)
-    y = df['maintenance_needed']
-    
-    # Standardize features
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X.select_dtypes(include=[np.number]))
-    
-    # Split data
-    split_idx = int(len(df) * (1 - test_size))
-    X_train, X_test = X_scaled[:split_idx], X_scaled[split_idx:]
-    y_train, y_test = y[:split_idx], y[split_idx:]
-    
-    # Save processed data
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    np.save(f"{output_path}/X_train.npy", X_train)
-    np.save(f"{output_path}/X_test.npy", X_test)
-    np.save(f"{output_path}/y_train.npy", y_train)
-    np.save(f"{output_path}/y_test.npy", y_test)
-    
-    print(f"Data preparation complete. Saved to {output_path}")
+#this parser is used to pass the arguments from the command line when running the script. 
+# It allows us to specify the raw data file, the train data directory, and the test data directory. 
+# This way, we can easily manage our data files and directories without hardcoding them in the script.
+parser = argparse.ArgumentParser()
+parser.add_argument("--raw_data", type=str)
+parser.add_argument("--train_data", type=str)
+parser.add_argument("--test_data", type=str)
+args = parser.parse_args()
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Prepare data for training")
-    parser.add_argument("--input", type=str, default="data/vehicle_maintenance.csv", help="Input data path")
-    parser.add_argument("--output", type=str, default="data/processed", help="Output directory path")
-    
-    args = parser.parse_args()
-    prepare_data(args.input, args.output)
+#this block is responsible for reading the raw data, creating new features, and preparing the dataset for training and testing.
+df = pd.read_csv(args.raw_data)
+df["temp_pressure_ratio"] = df["engine_temp_c"] / df["oil_pressure_psi"]
+df["service_overdue"] = (df["days_since_service"] > 180).astype(int)
+df["high_mileage"] = (df["mileage_km"] > 150_000).astype(int)
+df = df.drop(columns=["vehicle_id"])
+
+train, test = train_test_split(df, test_size=0.2, stratify=df["failure_30d"], random_state=42)
+#the stratifed parameter ensures that the distribution of the target variable (failure_30d) is maintained in both the train and test sets.
+Path(args.train_data).mkdir(parents=True, exist_ok=True)
+#The mkdir function is used to create the train and test directories if they do not already exist. 
+# The parents=True argument allows for the creation of any necessary parent directories, and exist_ok=True prevents an error if the directory already exists.
+Path(args.test_data).mkdir(parents=True, exist_ok= True)
+
+
+train.to_csv(Path(args.train_data) / "train.csv", index= False)
+test.to_csv(Path(args.test_data) / "test.csv" , index= False)
+#these lines save the train and test datasets as CSV files in the specified directories.
+#and index=False is used to prevent pandas from writing row indices to the CSV file, which is often unnecessary for machine learning tasks.
+
+print(f"Train: {len(train)}, Test: {len(test)}")
+#Finally, this line prints the number of samples in the train and test datasets, providing a
+
+

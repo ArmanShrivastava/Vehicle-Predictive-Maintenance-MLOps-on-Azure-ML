@@ -1,59 +1,42 @@
-"""
-Model training script for predictive maintenance
-"""
 import argparse
-import numpy as np
-import joblib
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import pandas as pd
+import lightgbm as lgb
+import mlflow
+import mlflow.lightgbm
 from pathlib import Path
-import json
 
-def train_model(train_data_path, model_output_path, metrics_output_path):
-    """
-    Train a Random Forest classifier for maintenance prediction
-    
-    Args:
-        train_data_path: Path to processed training data
-        model_output_path: Path to save the trained model
-        metrics_output_path: Path to save training metrics
-    """
-    # Load training data
-    X_train = np.load(f"{train_data_path}/X_train.npy")
-    y_train = np.load(f"{train_data_path}/y_train.npy")
-    X_test = np.load(f"{train_data_path}/X_test.npy")
-    y_test = np.load(f"{train_data_path}/y_test.npy")
-    
-    # Train model
-    model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-    model.fit(X_train, y_train)
-    
-    # Evaluate model
-    y_pred = model.predict(X_test)
-    
-    metrics = {
-        "accuracy": float(accuracy_score(y_test, y_pred)),
-        "precision": float(precision_score(y_test, y_pred)),
-        "recall": float(recall_score(y_test, y_pred)),
-        "f1_score": float(f1_score(y_test, y_pred))
-    }
-    
-    # Save model and metrics
-    Path(model_output_path).parent.mkdir(parents=True, exist_ok=True)
-    Path(metrics_output_path).parent.mkdir(parents=True, exist_ok=True)
-    
-    joblib.dump(model, f"{model_output_path}/model.pkl")
-    
-    with open(metrics_output_path, 'w') as f:
-        json.dump(metrics, f, indent=2)
-    
-    print(f"Model training complete. Metrics: {metrics}")
+parser = argparse.ArgumentParser()
+parser.add_argument("--train_data", type=str)
+parser.add_argument("--model_output", type=str)
+parser.add_argument("--num_leaves", type=int, default=31)
+parser.add_argument("--learning_rate", type=float, default=0.05)
+parser.add_argument("--n_estimators", type=int, default=200)   # reduced for 2-core node
+args = parser.parse_args()
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train predictive maintenance model")
-    parser.add_argument("--data", type=str, default="data/processed", help="Processed data directory")
-    parser.add_argument("--model-output", type=str, default="models", help="Model output directory")
-    parser.add_argument("--metrics-output", type=str, default="metrics/training_metrics.json", help="Metrics output path")
-    
-    args = parser.parse_args()
-    train_model(args.data, args.model_output, args.metrics_output)
+#the above block sets up the command-line argument parser to allow for flexible input of training data, model output path, and LightGBM hyperparameters.
+#line 8 tells the script to expect a string argument for the training data directory, line 9 for the model output directory, and lines 10-12 for the LightGBM hyperparameters with default values. 
+
+mlflow.autolog()
+
+df = pd.read_csv(Path(args.train_data) / "train.csv")
+X, y = df.drop(columns=["failure_30d"]), df["failure_30d"]
+#this block reads the training data from the specified directory, separates the features (X) from the target variable (y), which is "failure_30d". 
+# The drop method is used to remove the target column from the feature set.
+
+model = lgb.LGBMClassifier(
+    num_leaves=args.num_leaves,
+    learning_rate=args.learning_rate,
+    n_estimators=args.n_estimators,
+    class_weight="balanced",
+    n_jobs=2,            # match DS2_v2 cores
+    random_state=42,
+)
+
+model.fit(X, y)
+#this block initializes the LightGBM classifier with the specified hyperparameters and fits the model to the training data. 
+# The class_weight="balanced" argument is used to handle any class imbalance in the target variable, and n_jobs=2 allows the model to use 2 CPU cores for
+training.
+
+mlflow.lightgbm.save_model(model, args.model_output)
+print("Model saved")
+#finally, this block saves the trained model to the specified output directory using MLflow's Light

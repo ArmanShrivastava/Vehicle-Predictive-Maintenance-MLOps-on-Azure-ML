@@ -1,41 +1,34 @@
-"""
-Data generation script for vehicle predictive maintenance
-"""
-import argparse
-import pandas as pd
 import numpy as np
-from pathlib import Path
+import pandas as pd
 
-def generate_synthetic_data(n_samples=1000, output_path="data/vehicle_maintenance.csv"):
-    """
-    Generate synthetic vehicle maintenance data
-    
-    Args:
-        n_samples: Number of records to generate
-        output_path: Path to save the CSV file
-    """
-    np.random.seed(42)
-    
-    data = {
-        'vehicle_id': range(1, n_samples + 1),
-        'engine_temp': np.random.normal(90, 10, n_samples),
-        'oil_pressure': np.random.normal(50, 5, n_samples),
-        'battery_voltage': np.random.normal(12, 1, n_samples),
-        'mileage': np.random.uniform(0, 200000, n_samples),
-        'age_years': np.random.uniform(0, 15, n_samples),
-        'maintenance_needed': np.random.choice([0, 1], n_samples, p=[0.7, 0.3])
-    }
-    
-    df = pd.DataFrame(data)
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(output_path, index=False)
-    print(f"Generated {n_samples} records to {output_path}")
-    return df
+np.random.seed(42)
+N = 50_000
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate synthetic vehicle maintenance data")
-    parser.add_argument("--samples", type=int, default=1000, help="Number of samples to generate")
-    parser.add_argument("--output", type=str, default="data/vehicle_maintenance.csv", help="Output file path")
-    
-    args = parser.parse_args()
-    generate_synthetic_data(args.samples, args.output)
+df = pd.DataFrame({
+    "vehicle_id": np.random.randint(1000, 2000, N),
+    "engine_temp_c": np.random.normal(90, 8, N),
+    "oil_pressure_psi": np.random.normal(40, 6, N),
+    "battery_voltage": np.random.normal(12.6, 0.5, N),
+    "brake_pad_mm": np.clip(np.random.normal(8, 3, N), 0.5, 15),
+    "vibration_rms": np.abs(np.random.normal(0.5, 0.3, N)),
+    "mileage_km": np.random.uniform(5_000, 250_000, N),
+    "days_since_service": np.random.randint(0, 400, N),
+    "ambient_temp_c": np.random.normal(28, 10, N),
+    "avg_speed_kmh": np.clip(np.random.normal(55, 20, N), 5, 140),
+})
+
+logit = (
+    0.06 * (df["engine_temp_c"] - 90)
+    + 0.12 * (35 - df["oil_pressure_psi"]).clip(lower=0)
+    + 1.5 * (12.0 - df["battery_voltage"]).clip(lower=0)
+    + 0.25 * (3 - df["brake_pad_mm"]).clip(lower=0)
+    + 2.0 * (df["vibration_rms"] - 0.8).clip(lower=0)
+    + 0.004 * df["days_since_service"]
+    + 0.000004 * df["mileage_km"]
+    - 3.5
+)
+prob = 1 / (1 + np.exp(-logit))
+df["failure_30d"] = (np.random.rand(N) < prob).astype(int)
+
+df.to_csv("data/vehicle_telemetry.csv", index=False)
+print(df["failure_30d"].value_counts(normalize=True))
