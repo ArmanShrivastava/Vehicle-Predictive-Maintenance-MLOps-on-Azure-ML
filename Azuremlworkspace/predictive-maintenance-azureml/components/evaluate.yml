@@ -1,0 +1,33 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+name: model_evaluate
+display_name: Model Evaluation
+version: 1.0.0
+description: Evaluate trained model on test data
+
+inputs:
+  model:
+    type: uri_folder
+    description: Trained model
+  test_data:
+    type: uri_folder
+    description: Test dataset
+
+outputs:
+  evaluation_metrics:
+    type: uri_file
+    description: Evaluation metrics
+
+code: ../src/evaluate
+
+environment: azureml://registries/azureml/environments/sklearn-1.2/versions/1
+
+command: >-
+  python evaluate.py 
+  --model ${{ inputs.model }}/model.pkl
+  --data ${{ inputs.test_data }}
+  --output ${{ outputs.evaluation_metrics }}
+
+tags:
+  pipeline: vehicle-maintenance
+  stage: evaluation

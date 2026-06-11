@@ -1,0 +1,31 @@
+$schema: https://azuremlschemas.azureedge.net/latest/dataCollector.schema.json
+type: datadrift
+name: vehicle-maintenance-drift-monitor
+description: Monitor data drift for vehicle maintenance prediction model
+
+target_dataset:
+  type: uri_file
+  path: azureml://datasets/vehicle-maintenance-baseline/versions/1
+
+features:
+  - engine_temp
+  - oil_pressure
+  - battery_voltage
+  - mileage
+  - age_years
+  - high_temp
+  - low_pressure
+  - low_battery
+
+frequency: hour
+lookback_window_size: 7
+
+alert_config:
+  enabled: true
+  threshold: 0.1
+  contact_emails:
+    - mlops@company.com
+
+notification_config:
+  enabled: true
+  webhook_url: "https://company.webhook.office.com/webhookb2/..."

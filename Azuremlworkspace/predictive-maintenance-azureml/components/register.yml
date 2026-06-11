@@ -1,0 +1,25 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+name: model_register
+display_name: Model Registration
+version: 1.0.0
+description: Register trained model to Azure ML model registry
+
+inputs:
+  model:
+    type: uri_folder
+    description: Trained model directory
+
+code: ../src/register
+
+environment: azureml://registries/azureml/environments/sklearn-1.2/versions/1
+
+command: >-
+  python register.py 
+  --model ${{ inputs.model }}/model.pkl
+  --name vehicle-maintenance-model
+  --version 1
+
+tags:
+  pipeline: vehicle-maintenance
+  stage: registration

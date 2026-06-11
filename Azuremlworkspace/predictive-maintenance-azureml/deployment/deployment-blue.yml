@@ -1,0 +1,22 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineDeployment.schema.json
+name: blue
+endpoint_name: vehicle-maintenance-endpoint
+model: azureml:vehicle-maintenance-model@latest
+code_configuration:
+  code: ../deployment
+  scoring_script: score_test.py
+environment: azureml://registries/azureml/environments/sklearn-1.2/versions/1
+instance_type: Standard_DS3_v2
+instance_count: 2
+
+resources:
+  requests:
+    cpu: 1
+    memory_gb: 2
+  limits:
+    cpu: 2
+    memory_gb: 4
+
+app_insights_enabled: true
+request_logging_enabled: true
+model_mount_path: /var/azureml-models

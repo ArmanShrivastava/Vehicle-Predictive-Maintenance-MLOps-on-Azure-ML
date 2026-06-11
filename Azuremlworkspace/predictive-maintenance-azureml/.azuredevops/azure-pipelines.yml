@@ -1,0 +1,77 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  python.version: '3.9'
+  azureServiceConnectionId: 'Azure-ML-Connection'
+  workspaceId: 'vehicle-maintenance-ws'
+  resourceGroupId: 'vehicle-maintenance-rg'
+
+stages:
+  - stage: Build
+    displayName: Build and Test
+    jobs:
+      - job: BuildJob
+        displayName: Build Job
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '$(python.version)'
+            displayName: 'Use Python $(python.version)'
+
+          - script: |
+              python -m pip install --upgrade pip
+              pip install -r requirements.txt
+            displayName: 'Install dependencies'
+
+          - script: |
+              pytest tests/ -v
+            displayName: 'Run tests'
+
+  - stage: Train
+    displayName: Train Model
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - job: TrainJob
+        displayName: Training Job
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(azureServiceConnectionId)'
+              scriptType: 'bash'
+              scriptLocation: 'scriptPath'
+              scriptPath: 'infra/setup.sh'
+            displayName: 'Setup Infrastructure'
+
+          - script: |
+              python data/generate_data.py
+              python src/prep/prep.py
+              python src/train/train.py
+            displayName: 'Run Training Pipeline'
+
+  - stage: Deploy
+    displayName: Deploy Model
+    dependsOn: Train
+    condition: succeeded()
+    jobs:
+      - job: DeployJob
+        displayName: Deploy to Production
+        steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '$(azureServiceConnectionId)'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az ml endpoint create --resource-group $(resourceGroupId) \
+                  --workspace-name $(workspaceId) \
+                  --file deployment/endpoint.yml
+                az ml deployment create --resource-group $(resourceGroupId) \
+                  --workspace-name $(workspaceId) \
+                  --endpoint-name vehicle-maintenance-endpoint \
+                  --file deployment/deployment-blue.yml
+            displayName: 'Deploy Model to Azure ML'

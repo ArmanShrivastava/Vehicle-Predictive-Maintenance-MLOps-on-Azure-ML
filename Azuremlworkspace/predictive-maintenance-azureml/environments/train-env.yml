@@ -1,0 +1,16 @@
+name: vehicle-maintenance-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+    - azure-ai-ml==1.5.0
+    - azure-identity==1.13.0
+    - pandas==1.5.0
+    - scikit-learn==1.2.0
+    - numpy==1.23.0
+    - matplotlib==3.6.0
+    - seaborn==0.12.0
+    - joblib==1.2.0

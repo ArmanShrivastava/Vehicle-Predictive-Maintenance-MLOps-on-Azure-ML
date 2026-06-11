@@ -1,0 +1,14 @@
+$schema: https://azuremlschemas.azureedge.net/latest/managedOnlineEndpoint.schema.json
+name: vehicle-maintenance-endpoint
+auth_mode: key
+description: Online endpoint for vehicle maintenance prediction
+
+traffic:
+  blue: 100
+
+mirror_traffic:
+  green: 0
+
+properties:
+  contact_email: mlops@company.com
+  contact_team: MLOps Team

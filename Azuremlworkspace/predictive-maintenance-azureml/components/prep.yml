@@ -1,0 +1,29 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+name: data_prep
+display_name: Data Preparation
+version: 1.0.0
+description: Prepare and preprocess vehicle maintenance data
+
+inputs:
+  raw_data:
+    type: uri_file
+    description: Raw vehicle maintenance data CSV
+
+outputs:
+  processed_data:
+    type: uri_folder
+    description: Processed training and test data
+
+code: ../src/prep
+
+environment: azureml://registries/azureml/environments/sklearn-1.2/versions/1
+
+command: >-
+  python prep.py 
+  --input ${{ inputs.raw_data }}
+  --output ${{ outputs.processed_data }}
+
+tags:
+  pipeline: vehicle-maintenance
+  stage: preprocessing

@@ -1,0 +1,33 @@
+$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+type: command
+name: model_train
+display_name: Model Training
+version: 1.0.0
+description: Train Random Forest model for vehicle maintenance prediction
+
+inputs:
+  processed_data:
+    type: uri_folder
+    description: Processed training data
+
+outputs:
+  model:
+    type: uri_folder
+    description: Trained model
+  metrics:
+    type: uri_file
+    description: Training metrics
+
+code: ../src/train
+
+environment: azureml://registries/azureml/environments/sklearn-1.2/versions/1
+
+command: >-
+  python train.py 
+  --data ${{ inputs.processed_data }}
+  --model-output ${{ outputs.model }}
+  --metrics-output ${{ outputs.metrics }}
+
+tags:
+  pipeline: vehicle-maintenance
+  stage: training

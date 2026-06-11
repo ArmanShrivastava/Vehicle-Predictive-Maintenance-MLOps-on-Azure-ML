@@ -1,0 +1,47 @@
+$schema: https://azuremlschemas.azureedge.net/latest/sweepJob.schema.json
+type: sweep
+name: vehicle-maintenance-hyperparameter-sweep
+description: Hyperparameter tuning for vehicle maintenance model
+
+task: classification
+primary_metric: accuracy
+goal: maximize
+algorithm: grid
+
+trial:
+  command: >-
+    python src/train/train.py
+    --n-estimators {search_space.n_estimators}
+    --max-depth {search_space.max_depth}
+    --min-samples-split {search_space.min_samples_split}
+  environment: azureml://registries/azureml/environments/sklearn-1.2/versions/1
+  code_path: ../src/train
+  inputs:
+    data: ${{parent.inputs.processed_data}}
+
+search_space:
+  n_estimators:
+    type: choice
+    values: [50, 100, 200]
+  max_depth:
+    type: choice
+    values: [5, 10, 15, None]
+  min_samples_split:
+    type: choice
+    values: [2, 5, 10]
+
+limits:
+  max_total_trials: 12
+  max_concurrent_trials: 4
+  timeout: 3600
+
+compute: cpu-cluster
+
+inputs:
+  processed_data:
+    type: uri_folder
+    path: azureml://datasets/vehicle-maintenance-processed/versions/1
+
+outputs:
+  best_model:
+    type: uri_folder
